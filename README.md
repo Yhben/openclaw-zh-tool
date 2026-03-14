@@ -19,6 +19,18 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
+## Platform support
+
+- macOS: supported
+- Windows: supported for the Node CLI, with PowerShell bootstrap scripts included
+- Linux: the Node CLI should also work when OpenClaw is installed in a detectable global npm location
+
+Current caveats:
+
+- `install.sh` / `restore.sh` are for macOS/Linux shells
+- `install.ps1` / `restore.ps1` are for Windows PowerShell
+- browser scan commands require Playwright plus a launchable browser on the target machine
+
 ## Compatibility
 
 - Verified on OpenClaw `2026.3.12`
@@ -38,6 +50,12 @@ One-line install:
 curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.sh | bash
 ```
 
+Windows PowerShell install:
+
+```powershell
+iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -UseBasicParsing | iex
+```
+
 Restore original files:
 
 ```bash
@@ -48,6 +66,12 @@ One-line restore:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/restore.sh | bash
+```
+
+Windows PowerShell restore:
+
+```powershell
+iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/restore.ps1 -UseBasicParsing | iex
 ```
 
 Check current status:
@@ -85,6 +109,12 @@ Run a scan summary:
 
 ```bash
 node scripts/scan-cli.js
+```
+
+Export the unique residual English text list:
+
+```bash
+node scripts/residuals.js
 ```
 
 Generate conservative supplement fixes from scan results:
@@ -137,6 +167,7 @@ node bin/openclaw-zh.js status
 node bin/openclaw-zh.js verify
 node bin/openclaw-zh.js doctor
 node bin/openclaw-zh.js report
+node bin/openclaw-zh.js residuals
 node bin/openclaw-zh.js scan
 node bin/openclaw-zh.js autofix
 node bin/openclaw-zh.js promote-review

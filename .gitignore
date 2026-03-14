@@ -1,4 +1,5 @@
 node_modules/
 .DS_Store
 openclaw-zh-report.json
+openclaw-zh-residuals.json
 supplements/review-candidates.json

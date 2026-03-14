@@ -24,7 +24,11 @@ function candidateOpenClawDirs() {
   candidates.push(
     "/usr/local/lib/node_modules/openclaw",
     "/opt/homebrew/lib/node_modules/openclaw",
-    path.join(process.env.HOME ?? "", ".npm-global/lib/node_modules/openclaw")
+    path.join(process.env.HOME ?? "", ".npm-global/lib/node_modules/openclaw"),
+    path.join(process.env.APPDATA ?? "", "npm/node_modules/openclaw"),
+    path.join(process.env.ProgramFiles ?? "", "nodejs/node_modules/openclaw"),
+    path.join(process.env.ProgramFiles ?? "", "nodejs/node_modules/npm/node_modules/openclaw"),
+    path.join(process.env.LOCALAPPDATA ?? "", "Programs/openclaw")
   );
 
   return [...new Set(candidates.filter(Boolean))];

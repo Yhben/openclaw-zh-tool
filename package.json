@@ -13,6 +13,7 @@
     "verify": "node ./scripts/verify.js",
     "doctor": "node ./scripts/doctor.js",
     "report": "node ./scripts/report.js",
+    "residuals": "node ./scripts/residuals.js",
     "scan": "node ./scripts/scan-cli.js",
     "autofix": "node ./scripts/autofix.js",
     "promote-review": "node ./scripts/promote-review.js"

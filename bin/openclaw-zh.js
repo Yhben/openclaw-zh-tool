@@ -11,6 +11,7 @@ const scriptMap = {
   verify: "verify.js",
   doctor: "doctor.js",
   report: "report.js",
+  residuals: "residuals.js",
   scan: "scan-cli.js",
   autofix: "autofix.js",
   "promote-review": "promote-review.js"
@@ -20,7 +21,7 @@ const script = scriptMap[command];
 
 if (!script) {
   console.error(`Unknown command: ${command}`);
-  console.error("Usage: openclaw-zh <install|restore|status|verify|doctor|report|scan|autofix|promote-review>");
+  console.error("Usage: openclaw-zh <install|restore|status|verify|doctor|report|residuals|scan|autofix|promote-review>");
   process.exit(1);
 }
 
