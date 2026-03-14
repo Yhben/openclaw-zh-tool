@@ -11,6 +11,7 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 - integrity verification
 - doctor diagnostics
 - JSON report output
+- browser-based residual English scan
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
@@ -69,6 +70,18 @@ Write a JSON report:
 node scripts/report.js
 ```
 
+Run a scan summary:
+
+```bash
+node scripts/scan-cli.js
+```
+
+Install dependencies for browser scanning:
+
+```bash
+npm install
+```
+
 ## How it works
 
 The installer:
@@ -90,7 +103,15 @@ node bin/openclaw-zh.js status
 node bin/openclaw-zh.js verify
 node bin/openclaw-zh.js doctor
 node bin/openclaw-zh.js report
+node bin/openclaw-zh.js scan
 node bin/openclaw-zh.js restore
+```
+
+`doctor` and `report` try to scan the running OpenClaw WebUI at `http://127.0.0.1:18789` by default.
+You can override that with:
+
+```bash
+OPENCLAW_CONTROL_URL=http://127.0.0.1:18789 node bin/openclaw-zh.js doctor
 ```
 
 ## How OpenClaw detection works

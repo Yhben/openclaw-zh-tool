@@ -12,7 +12,11 @@
     "status": "node ./scripts/status.js",
     "verify": "node ./scripts/verify.js",
     "doctor": "node ./scripts/doctor.js",
-    "report": "node ./scripts/report.js"
+    "report": "node ./scripts/report.js",
+    "scan": "node ./scripts/scan-cli.js"
+  },
+  "dependencies": {
+    "playwright": "^1.55.0"
   },
   "keywords": [
     "openclaw",

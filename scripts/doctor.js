@@ -1,4 +1,5 @@
 import { collectHealth, resolveContext } from "./lib.js";
+import { runScan, summarizeScan } from "./scan.js";
 
 function line(label, value) {
   console.log(`${label}: ${value}`);
@@ -31,16 +32,35 @@ function main() {
   }
 
   if (problems.length === 0) {
-    console.log("Doctor status: healthy");
-    return;
+    console.log("Doctor status: structural checks passed");
+  } else {
+    console.log("Doctor status: issues found");
+    for (const problem of problems) {
+      console.log(`- ${problem}`);
+    }
+    process.exitCode = 1;
   }
-
-  console.log("Doctor status: issues found");
-  for (const problem of problems) {
-    console.log(`- ${problem}`);
-  }
-
-  process.exit(1);
 }
 
-main();
+runDoctor();
+
+async function runDoctor() {
+  main();
+
+  try {
+    const scan = await runScan();
+    console.log(`Residual English entries: ${scan.totalResidualEntries}`);
+    const topRoutes = summarizeScan(scan).filter((item) => item.residualEntries > 0).slice(0, 5);
+    for (const item of topRoutes) {
+      console.log(`- ${item.route}: ${item.residualEntries}`);
+    }
+    if (scan.totalResidualEntries > 0) {
+      console.log("Doctor scan status: residual English found");
+      process.exitCode = 1;
+    } else {
+      console.log("Doctor scan status: clean");
+    }
+  } catch (error) {
+    console.log(`Doctor scan status: unavailable (${String(error.message ?? error)})`);
+  }
+}

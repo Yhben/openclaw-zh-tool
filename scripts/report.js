@@ -1,15 +1,28 @@
 import fs from "node:fs";
 import path from "node:path";
 import { collectHealth, resolveContext } from "./lib.js";
+import { runScan } from "./scan.js";
 
-function main() {
+async function main() {
   const ctx = resolveContext();
   const health = collectHealth(ctx);
+  let scan = null;
+
+  try {
+    scan = await runScan();
+  } catch (error) {
+    scan = {
+      unavailable: true,
+      reason: String(error.message ?? error)
+    };
+  }
+
   const report = {
     generatedAt: new Date().toISOString(),
     toolVersion: ctx.manifest.toolVersion ?? null,
     runtimeFile: ctx.manifest.runtime.file,
-    ...health
+    ...health,
+    scan
   };
 
   const outputPath = path.join(process.cwd(), "openclaw-zh-report.json");
@@ -18,4 +31,4 @@ function main() {
   console.log(`Wrote report: ${outputPath}`);
 }
 
-main();
+await main();
