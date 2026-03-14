@@ -207,6 +207,31 @@ async function expandDisclosureButtons(page) {
   return clicked;
 }
 
+async function clickActionButtons(page) {
+  const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
+  const actionTexts = profile.actionTexts ?? [];
+  const clicked = [];
+  const seen = new Set();
+
+  for (const text of actionTexts) {
+    const buttons = page.getByRole("button", { name: text });
+    const count = await buttons.count();
+    for (let i = 0; i < Math.min(count, scanConfig.maxActionClicksPerView); i += 1) {
+      const button = buttons.nth(i);
+      const visible = await button.isVisible().catch(() => false);
+      if (!visible) continue;
+      const label = (((await button.textContent()) || "").replace(/\s+/g, " ").trim()) || text;
+      if (seen.has(label)) continue;
+      await button.click().catch(() => {});
+      await page.waitForTimeout(scanConfig.settleMs);
+      clicked.push(label);
+      seen.add(label);
+    }
+  }
+
+  return clicked;
+}
+
 async function scanRoute(page, route) {
   const url = `${scanConfig.baseUrl}${route}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -235,12 +260,18 @@ async function scanRoute(page, route) {
     await snapshot("after-add");
   }
 
+  const actionClicks = await clickActionButtons(page);
+  if (actionClicks.length > 0) {
+    await snapshot("after-action");
+  }
+
   return {
     route,
     url,
     tabs,
     expanded,
     addClicks,
+    actionClicks,
     views
   };
 }

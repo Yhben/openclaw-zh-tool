@@ -15,6 +15,7 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 - conservative residual auto-fix generation
 - review-candidate output for items that should not be auto-written blindly
 - unique residual text counting so deeper scans are not misread as simple duplicates
+- report summaries for top routes, safe candidates, review candidates, and unresolved leftovers
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
@@ -72,6 +73,13 @@ Write a JSON report:
 ```bash
 node scripts/report.js
 ```
+
+The report includes a summary block with:
+
+- top residual routes
+- top safe auto-fix candidates
+- top review candidates
+- top unresolved leftovers
 
 Run a scan summary:
 
