@@ -14,7 +14,8 @@
     "doctor": "node ./scripts/doctor.js",
     "report": "node ./scripts/report.js",
     "scan": "node ./scripts/scan-cli.js",
-    "autofix": "node ./scripts/autofix.js"
+    "autofix": "node ./scripts/autofix.js",
+    "promote-review": "node ./scripts/promote-review.js"
   },
   "dependencies": {
     "playwright": "^1.55.0"

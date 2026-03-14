@@ -90,6 +90,18 @@ This writes:
 - `supplements/generated-exact.json` for safe exact-match auto-fixes
 - `supplements/review-candidates.json` for items that should be reviewed before being promoted
 
+Promote reviewed candidates into the persistent custom supplement file:
+
+```bash
+node scripts/promote-review.js
+```
+
+Or promote selected entries only:
+
+```bash
+node scripts/promote-review.js "Some English Label" "Another Label"
+```
+
 Install dependencies for browser scanning:
 
 ```bash
@@ -119,6 +131,7 @@ node bin/openclaw-zh.js doctor
 node bin/openclaw-zh.js report
 node bin/openclaw-zh.js scan
 node bin/openclaw-zh.js autofix
+node bin/openclaw-zh.js promote-review
 node bin/openclaw-zh.js restore
 ```
 

@@ -60,6 +60,10 @@ function shouldIgnore(text) {
   return technicalAllowlist.some((pattern) => pattern.test(text));
 }
 
+function routeProfile(route) {
+  return scanConfig.routeProfiles?.[route] ?? {};
+}
+
 async function collectVisibleEnglish(page) {
   return page.evaluate(({ maxEntriesPerView }) => {
     const isVisible = (element) => {
@@ -99,7 +103,31 @@ function normalizeEntries(entries) {
   return entries.filter((entry) => !shouldIgnore(entry.text));
 }
 
-async function clickTabs(page) {
+async function clickTabs(page, route) {
+  const profile = routeProfile(route);
+  if (profile.tabTexts?.length) {
+    const clicked = [];
+    const seen = new Set();
+    for (const text of profile.tabTexts) {
+      const tabs = page.getByRole("tab", { name: text });
+      const count = await tabs.count();
+      for (let i = 0; i < Math.min(count, scanConfig.maxTabClicksPerView); i += 1) {
+        const tab = tabs.nth(i);
+        const visible = await tab.isVisible().catch(() => false);
+        if (!visible) continue;
+        const label = ((await tab.textContent()) || "").trim() || text;
+        if (seen.has(label)) continue;
+        await tab.click().catch(() => {});
+        await page.waitForTimeout(scanConfig.settleMs);
+        clicked.push(label);
+        seen.add(label);
+      }
+    }
+    if (clicked.length > 0) {
+      return clicked;
+    }
+  }
+
   const tabs = page.locator('[role="tab"]');
   const count = await tabs.count();
   const clicked = [];
@@ -117,8 +145,9 @@ async function clickTabs(page) {
 }
 
 async function clickAddButtons(page) {
+  const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
   const clicked = [];
-  for (const text of scanConfig.clickTexts) {
+  for (const text of profile.clickTexts ?? scanConfig.clickTexts) {
     const buttons = page.getByRole("button", { name: text });
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxAddClicksPerView); i += 1) {
@@ -134,6 +163,7 @@ async function clickAddButtons(page) {
 }
 
 async function expandDisclosureButtons(page) {
+  const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
   const clicked = [];
   const seen = new Set();
   const disclosureSelectors = [
@@ -158,7 +188,7 @@ async function expandDisclosureButtons(page) {
     }
   }
 
-  for (const text of scanConfig.expandTexts) {
+  for (const text of profile.expandTexts ?? scanConfig.expandTexts) {
     const buttons = page.getByRole("button", { name: text });
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxExpandClicksPerView); i += 1) {
@@ -190,7 +220,7 @@ async function scanRoute(page, route) {
 
   await snapshot("default");
 
-  const tabs = await clickTabs(page);
+  const tabs = await clickTabs(page, route);
   for (const tab of tabs) {
     await snapshot(`tab:${tab}`);
   }
