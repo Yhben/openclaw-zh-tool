@@ -46,16 +46,12 @@ function getOpenClawVersion(openClawDir) {
   return pkg.version;
 }
 
-function getPatchInfo(openClawVersion) {
-  return manifest.supportedOpenClawVersions[openClawVersion] ?? null;
-}
-
 function getAssetsDir(openClawDir) {
   return path.join(openClawDir, "dist/control-ui/assets");
 }
 
-function getPatchDir(openClawVersion) {
-  return path.join(repoRoot, "patches", openClawVersion, "assets");
+function getRuntimePath() {
+  return path.join(repoRoot, manifest.runtime.file);
 }
 
 function getStatePath(openClawDir) {
@@ -84,6 +80,15 @@ function timestamp() {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
+function findIndexBundle(assetsDir) {
+  const files = fs.readdirSync(assetsDir).filter((file) => /^index-.*\.js$/.test(file));
+  if (files.length === 0) {
+    throw new Error(`No index bundle found in ${assetsDir}`);
+  }
+  files.sort();
+  return files[0];
+}
+
 function resolveContext() {
   const openClawDir = findOpenClawDir();
   if (!openClawDir) {
@@ -91,26 +96,26 @@ function resolveContext() {
   }
 
   const openClawVersion = getOpenClawVersion(openClawDir);
-  const patchInfo = getPatchInfo(openClawVersion);
-
-  if (!patchInfo) {
-    throw new Error(`Unsupported OpenClaw version: ${openClawVersion}. Supported: ${Object.keys(manifest.supportedOpenClawVersions).join(", ")}`);
-  }
+  const assetsDir = getAssetsDir(openClawDir);
+  const indexBundle = findIndexBundle(assetsDir);
+  const runtimePath = getRuntimePath();
 
   return {
     repoRoot,
     manifest,
     openClawDir,
     openClawVersion,
-    patchInfo,
-    assetsDir: getAssetsDir(openClawDir),
-    patchDir: getPatchDir(openClawVersion),
+    assetsDir,
+    indexBundle,
+    indexBundlePath: path.join(assetsDir, indexBundle),
+    runtimePath,
     statePath: getStatePath(openClawDir)
   };
 }
 
 export {
   ensureDir,
+  findIndexBundle,
   readState,
   resolveContext,
   timestamp,

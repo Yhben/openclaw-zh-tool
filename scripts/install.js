@@ -4,35 +4,42 @@ import { ensureDir, resolveContext, timestamp, writeState } from "./lib.js";
 
 function main() {
   const ctx = resolveContext();
+  const runtime = fs.readFileSync(ctx.runtimePath, "utf8").trim();
+  const markerStart = ctx.manifest.runtime.markerStart;
+  const markerEnd = ctx.manifest.runtime.markerEnd;
+  const original = fs.readFileSync(ctx.indexBundlePath, "utf8");
+
+  if (original.includes(markerStart) && original.includes(markerEnd)) {
+    const updated = original.replace(
+      new RegExp(`${markerStart}[\\s\\S]*?${markerEnd}`),
+      `${markerStart}\n${runtime}\n${markerEnd}`
+    );
+    fs.writeFileSync(ctx.indexBundlePath, updated);
+    console.log(`Updated injected runtime in ${ctx.indexBundle}`);
+    return;
+  }
+
   const backupDir = path.join(ctx.assetsDir, ".openclaw-zh-backup", timestamp());
   ensureDir(backupDir);
+  const backup = path.join(backupDir, ctx.indexBundle);
+  fs.copyFileSync(ctx.indexBundlePath, backup);
 
-  for (const file of ctx.patchInfo.files) {
-    const source = path.join(ctx.assetsDir, file);
-    const backup = path.join(backupDir, file);
-    const patched = path.join(ctx.patchDir, file);
-
-    if (!fs.existsSync(source)) {
-      throw new Error(`Target asset missing: ${source}`);
-    }
-    if (!fs.existsSync(patched)) {
-      throw new Error(`Patch asset missing: ${patched}`);
-    }
-
-    fs.copyFileSync(source, backup);
-    fs.copyFileSync(patched, source);
-  }
+  const injected = `${original}\n${markerStart}\n${runtime}\n${markerEnd}\n`;
+  fs.writeFileSync(ctx.indexBundlePath, injected);
 
   writeState(ctx.openClawDir, {
     installedAt: new Date().toISOString(),
     openClawVersion: ctx.openClawVersion,
-    patchVersion: ctx.patchInfo.patchVersion,
+    verifiedVersion: ctx.manifest.verifiedOpenClawVersions.includes(ctx.openClawVersion),
+    mode: "runtime-injection",
     backupDir,
-    files: ctx.patchInfo.files
+    files: [ctx.indexBundle],
+    targetFile: ctx.indexBundle
   });
 
-  console.log(`Patched OpenClaw ${ctx.openClawVersion}`);
+  console.log(`Injected runtime into OpenClaw ${ctx.openClawVersion}`);
   console.log(`Assets dir: ${ctx.assetsDir}`);
+  console.log(`Target bundle: ${ctx.indexBundle}`);
   console.log(`Backup dir: ${backupDir}`);
 }
 

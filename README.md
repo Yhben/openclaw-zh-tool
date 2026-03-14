@@ -1,8 +1,8 @@
 # openclaw-zh-tool
 
-OpenClaw Control WebUI community Chinese patch installer.
+OpenClaw Control WebUI community Chinese runtime injector.
 
-This project packages a tested Chinese UI patch for OpenClaw `2026.3.12` and provides:
+This project injects a Chinese display-layer runtime into your installed OpenClaw WebUI and provides:
 
 - one-command install
 - automatic backup before patching
@@ -11,9 +11,10 @@ This project packages a tested Chinese UI patch for OpenClaw `2026.3.12` and pro
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
-## Supported version
+## Compatibility
 
-- OpenClaw `2026.3.12`
+- Verified on OpenClaw `2026.3.12`
+- Other versions may also work because the installer targets the current `index-*.js` bundle automatically instead of replacing version-specific asset hashes
 
 ## Quick start
 
@@ -23,10 +24,22 @@ cd openclaw-zh-tool
 node scripts/install.js
 ```
 
+One-line install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.sh | bash
+```
+
 Restore original files:
 
 ```bash
 node scripts/restore.js
+```
+
+One-line restore:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/restore.sh | bash
 ```
 
 Check current status:
@@ -35,18 +48,18 @@ Check current status:
 node scripts/status.js
 ```
 
-## What gets patched
+## How it works
 
-The installer replaces these frontend asset bundles inside your local OpenClaw installation:
+The installer:
 
-- `index-CenotFkT.js`
-- `nodes-Bel0FC94.js`
-- `agents-BaF8a7Ki.js`
-- `skills-CMWvmhzG.js`
-- `skills-shared-BHEhPazJ.js`
-- `logs-CDgUyuPX.js`
+1. locates your local OpenClaw installation
+2. finds the active `index-*.js` frontend bundle in `dist/control-ui/assets`
+3. backs up the original bundle
+4. appends a Chinese translation runtime to the end of that bundle
 
-## How detection works
+This is safer across versions than replacing hash-locked asset files.
+
+## How OpenClaw detection works
 
 The installer tries these paths in order:
 
@@ -54,11 +67,11 @@ The installer tries these paths in order:
 2. `npm root -g` + `/openclaw`
 3. common global npm locations
 
-If the installed OpenClaw version is not supported, the installer stops instead of applying a risky patch.
+If the installed OpenClaw version is not in the verified list, the installer still works in adaptive mode and reports that the version is unverified.
 
 ## Backup and restore
 
-Before patching, the installer copies original asset files into:
+Before patching, the installer copies the original bundle into:
 
 - `<openclaw>/dist/control-ui/assets/.openclaw-zh-backup/<timestamp>/`
 
@@ -69,8 +82,9 @@ It also writes state to:
 ## Notes
 
 - This is not an official OpenClaw plugin.
-- This is a version-locked community patch package.
-- After upgrading OpenClaw, you will likely need a newer patch release.
+- This is not an official OpenClaw plugin.
+- This tool is adaptive, but unverified future OpenClaw versions may still need runtime updates.
+- If OpenClaw changes its frontend structure heavily, a newer `openclaw-zh-tool` release may still be required.
 
 ## License
 
