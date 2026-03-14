@@ -3,6 +3,7 @@ import { scanConfig } from "./scan-config.js";
 const technicalAllowlist = [
   /^(ws:|https?:)/i,
   /^openclaw$/i,
+  /^openclaw\s+/i,
   /^json value$/i,
   /^select\.\.\.$/i,
   /^[A-Z0-9_./:-]+$/,
@@ -24,6 +25,17 @@ const technicalAllowlist = [
   /^sentence$/i,
   /^\d+ items?$/i
 ];
+
+const mixedTechnicalTokens = new Set([
+  "Control",
+  "UI",
+  "URL",
+  "URLs",
+  "WebSocket",
+  "gateway",
+  "token",
+  "tokens"
+]);
 
 async function loadPlaywright() {
   try {
@@ -57,7 +69,18 @@ async function launchBrowser(playwright) {
 }
 
 function shouldIgnore(text) {
-  return technicalAllowlist.some((pattern) => pattern.test(text));
+  if (technicalAllowlist.some((pattern) => pattern.test(text))) {
+    return true;
+  }
+
+  if (/[\u4e00-\u9fff]/.test(text)) {
+    const tokens = text.match(/[A-Za-z][A-Za-z0-9_-]*/g) ?? [];
+    if (tokens.length > 0 && tokens.every((token) => mixedTechnicalTokens.has(token))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function routeProfile(route) {
@@ -283,7 +306,13 @@ async function runScan() {
   }
 
   const browser = await launchBrowser(playwright);
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("openclaw.i18n.locale", "zh-CN");
+    } catch {}
+  });
+  const page = await context.newPage();
   const startedAt = new Date().toISOString();
   const results = [];
 
@@ -292,6 +321,7 @@ async function runScan() {
       results.push(await scanRoute(page, route));
     }
   } finally {
+    await context.close();
     await browser.close();
   }
 

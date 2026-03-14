@@ -1,6 +1,11 @@
 {
   "exact": {
     "Gateway Dashboard": "网关仪表板",
-    "Gateway Token": "网关令牌"
+    "Gateway Token": "网关令牌",
+    "Connect": "连接",
+    "How to connect": "如何连接",
+    "Password (not stored)": "密码（不存储）",
+    "Read the docs →": "阅读文档 →",
+    "WebSocket URL": "WebSocket 地址"
   }
 }
