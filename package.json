@@ -9,7 +9,10 @@
   "scripts": {
     "install:patch": "node ./scripts/install.js",
     "restore": "node ./scripts/restore.js",
-    "status": "node ./scripts/status.js"
+    "status": "node ./scripts/status.js",
+    "verify": "node ./scripts/verify.js",
+    "doctor": "node ./scripts/doctor.js",
+    "report": "node ./scripts/report.js"
   },
   "keywords": [
     "openclaw",

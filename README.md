@@ -8,6 +8,9 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 - automatic backup before patching
 - restore to original files
 - status check
+- integrity verification
+- doctor diagnostics
+- JSON report output
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
@@ -48,6 +51,24 @@ Check current status:
 node scripts/status.js
 ```
 
+Verify installation integrity:
+
+```bash
+node scripts/verify.js
+```
+
+Run diagnostics:
+
+```bash
+node scripts/doctor.js
+```
+
+Write a JSON report:
+
+```bash
+node scripts/report.js
+```
+
 ## How it works
 
 The installer:
@@ -58,6 +79,19 @@ The installer:
 4. appends a Chinese translation runtime to the end of that bundle
 
 This is safer across versions than replacing hash-locked asset files.
+
+## CLI
+
+After cloning, you can also use:
+
+```bash
+node bin/openclaw-zh.js install
+node bin/openclaw-zh.js status
+node bin/openclaw-zh.js verify
+node bin/openclaw-zh.js doctor
+node bin/openclaw-zh.js report
+node bin/openclaw-zh.js restore
+```
 
 ## How OpenClaw detection works
 
@@ -81,7 +115,6 @@ It also writes state to:
 
 ## Notes
 
-- This is not an official OpenClaw plugin.
 - This is not an official OpenClaw plugin.
 - This tool is adaptive, but unverified future OpenClaw versions may still need runtime updates.
 - If OpenClaw changes its frontend structure heavily, a newer `openclaw-zh-tool` release may still be required.

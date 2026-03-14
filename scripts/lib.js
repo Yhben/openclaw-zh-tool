@@ -58,6 +58,14 @@ function getStatePath(openClawDir) {
   return path.join(getAssetsDir(openClawDir), ".openclaw-zh-state.json");
 }
 
+function fileExists(filePath) {
+  return fs.existsSync(filePath);
+}
+
+function readText(filePath) {
+  return fs.readFileSync(filePath, "utf8");
+}
+
 function readState(openClawDir) {
   const statePath = getStatePath(openClawDir);
   if (!fs.existsSync(statePath)) {
@@ -113,10 +121,58 @@ function resolveContext() {
   };
 }
 
+function isVerifiedVersion(manifestValue, version) {
+  return manifestValue.verifiedOpenClawVersions.includes(version);
+}
+
+function readRuntime(ctx) {
+  return readText(ctx.runtimePath).trim();
+}
+
+function bundleContainsRuntime(ctx) {
+  const text = readText(ctx.indexBundlePath);
+  return text.includes(ctx.manifest.runtime.markerStart) && text.includes(ctx.manifest.runtime.markerEnd);
+}
+
+function bundleContainsExpectedRuntime(ctx) {
+  const text = readText(ctx.indexBundlePath);
+  const expected = readRuntime(ctx);
+  return text.includes(expected);
+}
+
+function collectHealth(ctx) {
+  const state = readState(ctx.openClawDir);
+  const markerInjected = bundleContainsRuntime(ctx);
+  const runtimeMatches = markerInjected ? bundleContainsExpectedRuntime(ctx) : false;
+  const backupDirExists = state?.backupDir ? fileExists(state.backupDir) : false;
+  const targetFileExists = state?.targetFile ? fileExists(path.join(ctx.assetsDir, state.targetFile)) : true;
+  const indexBundleExists = fileExists(ctx.indexBundlePath);
+
+  return {
+    openClawDir: ctx.openClawDir,
+    openClawVersion: ctx.openClawVersion,
+    verifiedVersion: isVerifiedVersion(ctx.manifest, ctx.openClawVersion),
+    indexBundle: ctx.indexBundle,
+    indexBundleExists,
+    statePresent: Boolean(state),
+    markerInjected,
+    runtimeMatches,
+    backupDirExists,
+    targetFileExists,
+    state
+  };
+}
+
 export {
+  bundleContainsExpectedRuntime,
+  bundleContainsRuntime,
+  collectHealth,
   ensureDir,
   findIndexBundle,
+  fileExists,
   readState,
+  readRuntime,
+  readText,
   resolveContext,
   timestamp,
   writeState
