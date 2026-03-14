@@ -1,0 +1,16 @@
+{
+  "toolVersion": "0.1.0",
+  "supportedOpenClawVersions": {
+    "2026.3.12": {
+      "patchVersion": "2026.3.12",
+      "files": [
+        "index-CenotFkT.js",
+        "nodes-Bel0FC94.js",
+        "agents-BaF8a7Ki.js",
+        "skills-CMWvmhzG.js",
+        "skills-shared-BHEhPazJ.js",
+        "logs-CDgUyuPX.js"
+      ]
+    }
+  }
+}

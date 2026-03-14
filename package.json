@@ -1,0 +1,22 @@
+{
+  "name": "openclaw-zh-tool",
+  "version": "0.1.0",
+  "description": "Community Chinese patch installer for OpenClaw Control UI",
+  "type": "module",
+  "bin": {
+    "openclaw-zh": "./bin/openclaw-zh.js"
+  },
+  "scripts": {
+    "install:patch": "node ./scripts/install.js",
+    "restore": "node ./scripts/restore.js",
+    "status": "node ./scripts/status.js"
+  },
+  "keywords": [
+    "openclaw",
+    "zh-cn",
+    "i18n",
+    "localization",
+    "patch"
+  ],
+  "license": "MIT"
+}
