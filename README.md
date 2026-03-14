@@ -13,6 +13,8 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 - JSON report output
 - browser-based residual English scan
 - conservative residual auto-fix generation
+- review-candidate output for items that should not be auto-written blindly
+- unique residual text counting so deeper scans are not misread as simple duplicates
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
@@ -83,6 +85,11 @@ Generate conservative supplement fixes from scan results:
 node scripts/autofix.js
 ```
 
+This writes:
+
+- `supplements/generated-exact.json` for safe exact-match auto-fixes
+- `supplements/review-candidates.json` for items that should be reviewed before being promoted
+
 Install dependencies for browser scanning:
 
 ```bash
@@ -147,6 +154,7 @@ It also writes state to:
 - This is not an official OpenClaw plugin.
 - This tool is adaptive, but unverified future OpenClaw versions may still need runtime updates.
 - `autofix` only writes conservative exact-match supplements for residual English labels it can translate safely.
+- review-tier candidates are written separately instead of being injected automatically.
 - If OpenClaw changes its frontend structure heavily, a newer `openclaw-zh-tool` release may still be required.
 
 ## License

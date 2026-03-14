@@ -227,6 +227,29 @@ function translateCandidate(text) {
   return translated;
 }
 
+function classifyCandidate(text, translation) {
+  const trimmed = text.trim();
+  const translated = translation.trim();
+  const hasSentencePunctuation = /[.:;]|".*"/.test(trimmed);
+  const isLong = trimmed.length > 72;
+  const remainingAscii = translated.match(/[A-Za-z][A-Za-z0-9_-]*/g) ?? [];
+  const unsafeLeftovers = remainingAscii.filter((token) => !ignoredTokens.has(token));
+
+  if (!translation || translation === trimmed) {
+    return "unresolved";
+  }
+  if (!hasSentencePunctuation && !isLong && unsafeLeftovers.length === 0) {
+    return "safe";
+  }
+  if (unsafeLeftovers.length === 0) {
+    return "review";
+  }
+  if (unsafeLeftovers.length <= 2 && trimmed.length <= 90) {
+    return "review";
+  }
+  return "unresolved";
+}
+
 function analyzeScan(scan) {
   const counts = new Map();
   for (const route of scan.routes ?? []) {
@@ -243,7 +266,8 @@ function analyzeScan(scan) {
     }
   }
 
-  const candidates = [];
+  const safeCandidates = [];
+  const reviewCandidates = [];
   const unresolved = [];
 
   for (const [text, meta] of counts) {
@@ -255,20 +279,29 @@ function analyzeScan(scan) {
       views: [...meta.views].sort()
     };
 
-    if (translation && translation !== text) {
-      candidates.push({ ...item, translation });
-    } else {
-      unresolved.push(item);
+    const classification = classifyCandidate(text, translation ?? "");
+    if (classification === "safe") {
+      safeCandidates.push({ ...item, translation });
+      continue;
     }
+    if (classification === "review") {
+      reviewCandidates.push({ ...item, translation });
+      continue;
+    }
+    unresolved.push(item);
   }
 
-  candidates.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
+  safeCandidates.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
+  reviewCandidates.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
   unresolved.sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
 
   return {
-    candidateCount: candidates.length,
+    candidateCount: safeCandidates.length,
+    reviewCandidateCount: reviewCandidates.length,
     unresolvedCount: unresolved.length,
-    candidates,
+    candidates: safeCandidates,
+    safeCandidates,
+    reviewCandidates,
     unresolved
   };
 }
@@ -297,8 +330,20 @@ function writeGeneratedSupplements(repoRoot, analysis) {
   };
 }
 
+function writeReviewSuggestions(repoRoot, analysis) {
+  const outputPath = path.join(repoRoot, "supplements", "review-candidates.json");
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    review: analysis.reviewCandidates,
+    unresolved: analysis.unresolved
+  };
+  fs.writeFileSync(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
+  return outputPath;
+}
+
 export {
   analyzeScan,
   translateCandidate,
-  writeGeneratedSupplements
+  writeGeneratedSupplements,
+  writeReviewSuggestions
 };

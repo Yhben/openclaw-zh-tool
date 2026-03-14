@@ -20,8 +20,12 @@ const scanConfig = {
     "/logs"
   ],
   clickTexts: ["添加", "添加条目", "Add", "Add Entry"],
+  expandTexts: ["展开", "高级", "更多", "显示更多", "Expand", "Advanced", "More", "Show more"],
   settleMs: 1200,
-  maxEntriesPerView: 80
+  maxEntriesPerView: 80,
+  maxTabClicksPerView: 24,
+  maxAddClicksPerView: 3,
+  maxExpandClicksPerView: 16
 };
 
 export { scanConfig };

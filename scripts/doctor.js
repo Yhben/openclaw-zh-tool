@@ -52,7 +52,9 @@ async function runDoctor() {
     const scan = await runScan();
     const analysis = analyzeScan(scan);
     console.log(`Residual English entries: ${scan.totalResidualEntries}`);
+    console.log(`Unique residual texts: ${scan.uniqueResidualEntries}`);
     console.log(`Auto-fix candidates: ${analysis.candidateCount}`);
+    console.log(`Review candidates: ${analysis.reviewCandidateCount}`);
     console.log(`Unresolved entries: ${analysis.unresolvedCount}`);
     const topRoutes = summarizeScan(scan).filter((item) => item.residualEntries > 0).slice(0, 5);
     for (const item of topRoutes) {

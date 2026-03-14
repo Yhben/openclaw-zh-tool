@@ -104,7 +104,7 @@ async function clickTabs(page) {
   const count = await tabs.count();
   const clicked = [];
 
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < Math.min(count, scanConfig.maxTabClicksPerView); i += 1) {
     const tab = tabs.nth(i);
     const label = ((await tab.textContent()) || "").trim();
     if (!label) continue;
@@ -121,7 +121,7 @@ async function clickAddButtons(page) {
   for (const text of scanConfig.clickTexts) {
     const buttons = page.getByRole("button", { name: text });
     const count = await buttons.count();
-    for (let i = 0; i < Math.min(count, 3); i += 1) {
+    for (let i = 0; i < Math.min(count, scanConfig.maxAddClicksPerView); i += 1) {
       const button = buttons.nth(i);
       const visible = await button.isVisible().catch(() => false);
       if (!visible) continue;
@@ -133,32 +133,83 @@ async function clickAddButtons(page) {
   return clicked;
 }
 
+async function expandDisclosureButtons(page) {
+  const clicked = [];
+  const seen = new Set();
+  const disclosureSelectors = [
+    'button[aria-expanded="false"]',
+    '[role="button"][aria-expanded="false"]',
+    "details summary"
+  ];
+
+  for (const selector of disclosureSelectors) {
+    const nodes = page.locator(selector);
+    const count = await nodes.count();
+    for (let i = 0; i < Math.min(count, scanConfig.maxExpandClicksPerView); i += 1) {
+      const node = nodes.nth(i);
+      const visible = await node.isVisible().catch(() => false);
+      if (!visible) continue;
+      const label = (((await node.textContent()) || "").replace(/\s+/g, " ").trim()) || selector;
+      if (seen.has(`${selector}:${label}`)) continue;
+      await node.click().catch(() => {});
+      await page.waitForTimeout(scanConfig.settleMs);
+      seen.add(`${selector}:${label}`);
+      clicked.push(label);
+    }
+  }
+
+  for (const text of scanConfig.expandTexts) {
+    const buttons = page.getByRole("button", { name: text });
+    const count = await buttons.count();
+    for (let i = 0; i < Math.min(count, scanConfig.maxExpandClicksPerView); i += 1) {
+      const button = buttons.nth(i);
+      const visible = await button.isVisible().catch(() => false);
+      if (!visible) continue;
+      const label = (((await button.textContent()) || "").replace(/\s+/g, " ").trim()) || text;
+      if (seen.has(`text:${label}`)) continue;
+      await button.click().catch(() => {});
+      await page.waitForTimeout(scanConfig.settleMs);
+      seen.add(`text:${label}`);
+      clicked.push(label);
+    }
+  }
+
+  return clicked;
+}
+
 async function scanRoute(page, route) {
   const url = `${scanConfig.baseUrl}${route}`;
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(scanConfig.settleMs);
 
   const views = [];
+  const snapshot = async (view) => {
+    const entries = normalizeEntries(await collectVisibleEnglish(page));
+    views.push({ view, entries });
+  };
 
-  const baseEntries = normalizeEntries(await collectVisibleEnglish(page));
-  views.push({ view: "default", entries: baseEntries });
+  await snapshot("default");
 
   const tabs = await clickTabs(page);
   for (const tab of tabs) {
-    const entries = normalizeEntries(await collectVisibleEnglish(page));
-    views.push({ view: `tab:${tab}`, entries });
+    await snapshot(`tab:${tab}`);
+  }
+
+  const expanded = await expandDisclosureButtons(page);
+  if (expanded.length > 0) {
+    await snapshot("expanded");
   }
 
   const addClicks = await clickAddButtons(page);
   if (addClicks.length > 0) {
-    const entries = normalizeEntries(await collectVisibleEnglish(page));
-    views.push({ view: "after-add", entries });
+    await snapshot("after-add");
   }
 
   return {
     route,
     url,
     tabs,
+    expanded,
     addClicks,
     views
   };
@@ -187,12 +238,16 @@ async function runScan() {
     (sum, route) => sum + route.views.reduce((viewSum, view) => viewSum + view.entries.length, 0),
     0
   );
+  const uniqueResidualEntries = new Set(
+    results.flatMap((route) => route.views.flatMap((view) => view.entries.map((entry) => entry.text.trim())))
+  ).size;
 
   return {
     startedAt,
     baseUrl: scanConfig.baseUrl,
     totalRoutes: results.length,
     totalResidualEntries,
+    uniqueResidualEntries,
     routes: results
   };
 }

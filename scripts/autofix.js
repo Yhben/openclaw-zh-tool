@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { analyzeScan, writeGeneratedSupplements } from "./autofix-lib.js";
+import { analyzeScan, writeGeneratedSupplements, writeReviewSuggestions } from "./autofix-lib.js";
 import { collectHealth, resolveContext } from "./lib.js";
 import { runScan } from "./scan.js";
 
@@ -10,8 +10,13 @@ async function main() {
   const analysis = analyzeScan(scan);
 
   console.log(`Residual English entries: ${scan.totalResidualEntries}`);
+  console.log(`Unique residual texts: ${scan.uniqueResidualEntries}`);
   console.log(`Auto-fix candidates: ${analysis.candidateCount}`);
+  console.log(`Review candidates: ${analysis.reviewCandidateCount}`);
   console.log(`Unresolved entries: ${analysis.unresolvedCount}`);
+
+  const reviewPath = writeReviewSuggestions(ctx.repoRoot, analysis);
+  console.log(`Review suggestion file: ${reviewPath}`);
 
   if (analysis.candidateCount === 0) {
     console.log("No safe auto-fix candidates found.");
