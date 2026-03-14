@@ -5,6 +5,8 @@
 - Chinese guide: [README.zh-CN.md](./README.zh-CN.md)
 - Release notes: [RELEASE_NOTES.md](./RELEASE_NOTES.md)
 - GitHub release draft: [docs/GITHUB_RELEASE_TEMPLATE_v0.3.0.md](./docs/GITHUB_RELEASE_TEMPLATE_v0.3.0.md)
+- Pre-release checklist: [docs/PRE_RELEASE_CHECKLIST.md](./docs/PRE_RELEASE_CHECKLIST.md)
+- Post-release guide: [docs/POST_RELEASE_GUIDE.md](./docs/POST_RELEASE_GUIDE.md)
 
 It injects a Chinese display-layer runtime into an installed OpenClaw frontend bundle so Chinese-speaking users can use the WebUI more easily without changing OpenClaw's runtime behavior.
 
