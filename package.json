@@ -1,6 +1,6 @@
 {
   "name": "openclaw-zh-tool",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Adaptive Chinese runtime injector for OpenClaw Control UI",
   "type": "module",
   "bin": {
@@ -13,7 +13,8 @@
     "verify": "node ./scripts/verify.js",
     "doctor": "node ./scripts/doctor.js",
     "report": "node ./scripts/report.js",
-    "scan": "node ./scripts/scan-cli.js"
+    "scan": "node ./scripts/scan-cli.js",
+    "autofix": "node ./scripts/autofix.js"
   },
   "dependencies": {
     "playwright": "^1.55.0"

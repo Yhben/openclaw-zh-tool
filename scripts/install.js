@@ -1,19 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ensureDir, resolveContext, timestamp, writeState } from "./lib.js";
+import { buildRuntimePayload, ensureDir, resolveContext, timestamp, writeState } from "./lib.js";
 
 function main() {
   const ctx = resolveContext();
-  const runtime = fs.readFileSync(ctx.runtimePath, "utf8").trim();
+  const runtime = buildRuntimePayload(ctx);
   const markerStart = ctx.manifest.runtime.markerStart;
   const markerEnd = ctx.manifest.runtime.markerEnd;
   const original = fs.readFileSync(ctx.indexBundlePath, "utf8");
 
   if (original.includes(markerStart) && original.includes(markerEnd)) {
-    const updated = original.replace(
-      new RegExp(`${markerStart}[\\s\\S]*?${markerEnd}`),
-      `${markerStart}\n${runtime}\n${markerEnd}`
-    );
+    const start = original.indexOf(markerStart);
+    const end = original.indexOf(markerEnd, start + markerStart.length);
+    const updated = `${original.slice(0, start)}${markerStart}\n${runtime}\n${markerEnd}${original.slice(end + markerEnd.length)}`;
     fs.writeFileSync(ctx.indexBundlePath, updated);
     console.log(`Updated injected runtime in ${ctx.indexBundle}`);
     return;

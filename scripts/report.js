@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { analyzeScan } from "./autofix-lib.js";
 import { collectHealth, resolveContext } from "./lib.js";
 import { runScan } from "./scan.js";
 
@@ -22,7 +23,8 @@ async function main() {
     toolVersion: ctx.manifest.toolVersion ?? null,
     runtimeFile: ctx.manifest.runtime.file,
     ...health,
-    scan
+    scan,
+    autofixAnalysis: scan && !scan.unavailable ? analyzeScan(scan) : null
   };
 
   const outputPath = path.join(process.cwd(), "openclaw-zh-report.json");

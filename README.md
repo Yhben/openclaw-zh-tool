@@ -12,6 +12,7 @@ This project injects a Chinese display-layer runtime into your installed OpenCla
 - doctor diagnostics
 - JSON report output
 - browser-based residual English scan
+- conservative residual auto-fix generation
 
 This project only patches display-layer frontend assets. It does not modify runtime logic, config keys, API/RPC contracts, IDs, commands, or model names.
 
@@ -76,6 +77,12 @@ Run a scan summary:
 node scripts/scan-cli.js
 ```
 
+Generate conservative supplement fixes from scan results:
+
+```bash
+node scripts/autofix.js
+```
+
 Install dependencies for browser scanning:
 
 ```bash
@@ -104,6 +111,7 @@ node bin/openclaw-zh.js verify
 node bin/openclaw-zh.js doctor
 node bin/openclaw-zh.js report
 node bin/openclaw-zh.js scan
+node bin/openclaw-zh.js autofix
 node bin/openclaw-zh.js restore
 ```
 
@@ -138,6 +146,7 @@ It also writes state to:
 
 - This is not an official OpenClaw plugin.
 - This tool is adaptive, but unverified future OpenClaw versions may still need runtime updates.
+- `autofix` only writes conservative exact-match supplements for residual English labels it can translate safely.
 - If OpenClaw changes its frontend structure heavily, a newer `openclaw-zh-tool` release may still be required.
 
 ## License

@@ -1,4 +1,5 @@
 import { collectHealth, resolveContext } from "./lib.js";
+import { analyzeScan } from "./autofix-lib.js";
 import { runScan, summarizeScan } from "./scan.js";
 
 function line(label, value) {
@@ -49,13 +50,19 @@ async function runDoctor() {
 
   try {
     const scan = await runScan();
+    const analysis = analyzeScan(scan);
     console.log(`Residual English entries: ${scan.totalResidualEntries}`);
+    console.log(`Auto-fix candidates: ${analysis.candidateCount}`);
+    console.log(`Unresolved entries: ${analysis.unresolvedCount}`);
     const topRoutes = summarizeScan(scan).filter((item) => item.residualEntries > 0).slice(0, 5);
     for (const item of topRoutes) {
       console.log(`- ${item.route}: ${item.residualEntries}`);
     }
     if (scan.totalResidualEntries > 0) {
       console.log("Doctor scan status: residual English found");
+      if (analysis.candidateCount > 0) {
+        console.log("Suggested next step: run `node bin/openclaw-zh.js autofix`");
+      }
       process.exitCode = 1;
     } else {
       console.log("Doctor scan status: clean");

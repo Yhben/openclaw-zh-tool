@@ -54,6 +54,10 @@ function getRuntimePath() {
   return path.join(repoRoot, manifest.runtime.file);
 }
 
+function getSupplementPaths() {
+  return (manifest.supplements?.exactFiles ?? []).map((file) => path.join(repoRoot, file));
+}
+
 function getStatePath(openClawDir) {
   return path.join(getAssetsDir(openClawDir), ".openclaw-zh-state.json");
 }
@@ -129,6 +133,49 @@ function readRuntime(ctx) {
   return readText(ctx.runtimePath).trim();
 }
 
+function readSupplementMaps(ctx) {
+  const merged = {};
+  for (const supplementPath of getSupplementPaths()) {
+    if (!fileExists(supplementPath)) continue;
+    const parsed = JSON.parse(readText(supplementPath));
+    Object.assign(merged, parsed.exact ?? {});
+  }
+  return merged;
+}
+
+function buildSupplementRuntime(ctx) {
+  const exact = readSupplementMaps(ctx);
+  const entries = Object.entries(exact).filter(([key, value]) => key && value && key !== value);
+  if (entries.length === 0) {
+    return "";
+  }
+
+  return [
+    "(()=>{",
+    `const exact=new Map(${JSON.stringify(entries)});`,
+    "function ready(){try{return localStorage.getItem(\"openclaw.i18n.locale\")===\"zh-CN\"}catch{return!1}}",
+    "function translate(text){if(!text||!/\\u0041-\\u005A\\u0061-\\u007A/.test(text))return text;const trimmed=text.trim();if(!exact.has(trimmed))return text;return text.replace(trimmed,exact.get(trimmed));}",
+    "function applyAttrs(root){for(const element of root.querySelectorAll(\"[placeholder],[title],[aria-label]\")){for(const attr of [\"placeholder\",\"title\",\"aria-label\"]){const value=element.getAttribute(attr);if(!value)continue;const translated=translate(value);if(translated!==value)element.setAttribute(attr,translated);}}}",
+    "function applyText(root){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;for(;node=walker.nextNode();){const parent=node.parentElement;if(!parent||/^(SCRIPT|STYLE|TEXTAREA)$/.test(parent.tagName)||parent.closest(\".log-stream\"))continue;const translated=translate(node.nodeValue||\"\");if(translated!==node.nodeValue)node.nodeValue=translated;}}",
+    "let queued=false;",
+    "function tick(){if(queued||!ready())return;queued=true;requestAnimationFrame(()=>{queued=false;const root=document.querySelector(\"main\")||document.body;applyText(root);applyAttrs(root);});}",
+    "new MutationObserver(tick).observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:[\"placeholder\",\"title\",\"aria-label\"]});",
+    "document.readyState===\"loading\"?document.addEventListener(\"DOMContentLoaded\",tick,{once:true}):tick();",
+    "addEventListener(\"popstate\",tick);",
+    "setInterval(tick,1200);",
+    "})();"
+  ].join("");
+}
+
+function buildRuntimePayload(ctx) {
+  const segments = [readRuntime(ctx)];
+  const supplementRuntime = buildSupplementRuntime(ctx);
+  if (supplementRuntime) {
+    segments.push(supplementRuntime);
+  }
+  return segments.join("\n");
+}
+
 function bundleContainsRuntime(ctx) {
   const text = readText(ctx.indexBundlePath);
   return text.includes(ctx.manifest.runtime.markerStart) && text.includes(ctx.manifest.runtime.markerEnd);
@@ -136,7 +183,7 @@ function bundleContainsRuntime(ctx) {
 
 function bundleContainsExpectedRuntime(ctx) {
   const text = readText(ctx.indexBundlePath);
-  const expected = readRuntime(ctx);
+  const expected = buildRuntimePayload(ctx);
   return text.includes(expected);
 }
 
@@ -164,6 +211,7 @@ function collectHealth(ctx) {
 }
 
 export {
+  buildRuntimePayload,
   bundleContainsExpectedRuntime,
   bundleContainsRuntime,
   collectHealth,

@@ -1,5 +1,5 @@
 {
-  "toolVersion": "0.2.0",
+  "toolVersion": "0.3.0",
   "verifiedOpenClawVersions": [
     "2026.3.12"
   ],
@@ -7,5 +7,11 @@
     "file": "runtime/openclaw-zh-runtime.js",
     "markerStart": "/* OPENCLAW_ZH_RUNTIME_START */",
     "markerEnd": "/* OPENCLAW_ZH_RUNTIME_END */"
+  },
+  "supplements": {
+    "exactFiles": [
+      "supplements/custom-exact.json",
+      "supplements/generated-exact.json"
+    ]
   }
 }
