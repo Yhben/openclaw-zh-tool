@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { scanConfig } from "./scan-config.js";
 
 const technicalAllowlist = [
@@ -68,6 +71,192 @@ async function launchBrowser(playwright) {
   throw new Error("Unable to launch a browser. Install Playwright browsers or set OPENCLAW_ZH_BROWSER_PATH.");
 }
 
+function readJsonIfExists(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function extractBalancedJson(raw, startIndex) {
+  if (startIndex < 0 || startIndex >= raw.length) return null;
+  const opening = raw[startIndex];
+  const closing = opening === "{" ? "}" : opening === "[" ? "]" : null;
+  if (!closing) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = startIndex; i < raw.length; i += 1) {
+    const char = raw[i];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = true;
+        continue;
+      }
+      if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === opening) {
+      depth += 1;
+      continue;
+    }
+
+    if (char === closing) {
+      depth -= 1;
+      if (depth === 0) {
+        return raw.slice(startIndex, i + 1);
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractJsonAfterKey(raw, key) {
+  let fromIndex = raw.length;
+
+  while (fromIndex >= 0) {
+    const keyIndex = raw.lastIndexOf(key, fromIndex);
+    if (keyIndex < 0) return null;
+
+    const searchStart = keyIndex + key.length;
+    const objectIndex = raw.indexOf("{", searchStart);
+    const arrayIndex = raw.indexOf("[", searchStart);
+    const valueIndex = [objectIndex, arrayIndex]
+      .filter((index) => index >= 0)
+      .sort((a, b) => a - b)[0];
+
+    if (valueIndex >= 0 && valueIndex - searchStart < 4096) {
+      const extracted = extractBalancedJson(raw, valueIndex);
+      if (extracted) {
+        try {
+          return JSON.parse(extracted);
+        } catch {}
+      }
+    }
+
+    fromIndex = keyIndex - 1;
+  }
+
+  return null;
+}
+
+function findBrowserStorageDirs() {
+  const home = os.homedir();
+  return [
+    path.join(home, "Library/Application Support/Google/Chrome/Profile 1/Local Storage/leveldb"),
+    path.join(home, "Library/Application Support/Google/Chrome/Default/Local Storage/leveldb"),
+    path.join(home, "Library/Application Support/Chromium/Default/Local Storage/leveldb"),
+    path.join(home, "AppData/Local/Google/Chrome/User Data/Default/Local Storage/leveldb"),
+    path.join(home, "AppData/Local/Chromium/User Data/Default/Local Storage/leveldb")
+  ];
+}
+
+function readBrowserLocalStorageBootstrap() {
+  for (const dir of findBrowserStorageDirs()) {
+    if (!fs.existsSync(dir)) continue;
+    const files = fs
+      .readdirSync(dir)
+      .filter((name) => name.endsWith(".ldb") || name.endsWith(".log"))
+      .map((name) => ({
+        filePath: path.join(dir, name),
+        mtimeMs: fs.statSync(path.join(dir, name)).mtimeMs
+      }))
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+    let deviceIdentity = null;
+    let deviceAuth = null;
+    let settings = null;
+
+    for (const file of files) {
+      const raw = fs.readFileSync(file.filePath, "latin1");
+      if (!deviceIdentity) {
+        const parsed = extractJsonAfterKey(raw, "openclaw-device-identity-v1");
+        if (parsed?.deviceId) deviceIdentity = parsed;
+      }
+      if (!deviceAuth) {
+        const parsed = extractJsonAfterKey(raw, "openclaw.device.auth.v1");
+        if (parsed?.tokens) deviceAuth = parsed;
+      }
+      if (!settings) {
+        const parsed = extractJsonAfterKey(raw, "openclaw.control.settings.v1");
+        if (parsed?.gatewayUrl) settings = parsed;
+      }
+      if (deviceIdentity && deviceAuth && settings) {
+        return { deviceIdentity, deviceAuth, settings };
+      }
+    }
+
+    if (deviceIdentity || deviceAuth || settings) {
+      return { deviceIdentity, deviceAuth, settings };
+    }
+  }
+
+  return null;
+}
+
+function readScanBootstrap() {
+  const home = os.homedir();
+  const browserBootstrap = readBrowserLocalStorageBootstrap();
+  const identityCandidates = [
+    path.join(home, "Library/Application Support/OpenClaw/identity"),
+    path.join(home, ".openclaw/identity")
+  ];
+
+  let deviceIdentity = browserBootstrap?.deviceIdentity ?? null;
+  let deviceAuth = browserBootstrap?.deviceAuth ?? null;
+
+  for (const dir of identityCandidates) {
+    const device = readJsonIfExists(path.join(dir, "device.json"));
+    const auth = readJsonIfExists(path.join(dir, "device-auth.json"));
+    if (!deviceIdentity && device?.deviceId) {
+      deviceIdentity = {
+        version: device.version ?? 1,
+        deviceId: device.deviceId,
+        publicKey: device.publicKey ?? device.publicKeyPem,
+        privateKey: device.privateKey ?? device.privateKeyPem,
+        createdAtMs: device.createdAtMs
+      };
+    }
+    if (!deviceAuth && auth?.tokens) {
+      deviceAuth = auth;
+    }
+    if (deviceIdentity && deviceAuth) break;
+  }
+
+  const config = readJsonIfExists(path.join(home, ".openclaw/openclaw.json"));
+  const gatewayPort = config?.gateway?.port ?? 18789;
+  const gatewayUrl = `ws://127.0.0.1:${gatewayPort}`;
+  const settings = {
+    gatewayUrl,
+    sessionKey: "agent:main:main",
+    lastActiveSessionKey: "agent:main:main",
+    ...(browserBootstrap?.settings || {})
+  };
+
+  return {
+    deviceIdentity,
+    deviceAuth,
+    settings
+  };
+}
+
 function shouldIgnore(text) {
   if (technicalAllowlist.some((pattern) => pattern.test(text))) {
     return true;
@@ -126,24 +315,38 @@ function normalizeEntries(entries) {
   return entries.filter((entry) => !shouldIgnore(entry.text));
 }
 
+async function getContentRoot(page) {
+  const main = page.locator("main");
+  const count = await main.count();
+  if (count > 0) return main.first();
+  return page.locator("body");
+}
+
 async function clickTabs(page, route) {
   const profile = routeProfile(route);
+  const root = await getContentRoot(page);
   if (profile.tabTexts?.length) {
     const clicked = [];
     const seen = new Set();
     for (const text of profile.tabTexts) {
-      const tabs = page.getByRole("tab", { name: text });
-      const count = await tabs.count();
-      for (let i = 0; i < Math.min(count, scanConfig.maxTabClicksPerView); i += 1) {
-        const tab = tabs.nth(i);
-        const visible = await tab.isVisible().catch(() => false);
-        if (!visible) continue;
-        const label = ((await tab.textContent()) || "").trim() || text;
-        if (seen.has(label)) continue;
-        await tab.click().catch(() => {});
-        await page.waitForTimeout(scanConfig.settleMs);
-        clicked.push(label);
-        seen.add(label);
+      const candidates = [
+        root.getByRole("tab", { name: text }),
+        root.getByRole("button", { name: text })
+      ];
+
+      for (const group of candidates) {
+        const count = await group.count();
+        for (let i = 0; i < Math.min(count, scanConfig.maxTabClicksPerView); i += 1) {
+          const tab = group.nth(i);
+          const visible = await tab.isVisible().catch(() => false);
+          if (!visible) continue;
+          const label = ((await tab.textContent()) || "").trim() || text;
+          if (seen.has(label)) continue;
+          await tab.click().catch(() => {});
+          await page.waitForTimeout(scanConfig.settleMs);
+          clicked.push(label);
+          seen.add(label);
+        }
       }
     }
     if (clicked.length > 0) {
@@ -151,7 +354,7 @@ async function clickTabs(page, route) {
     }
   }
 
-  const tabs = page.locator('[role="tab"]');
+  const tabs = root.locator('[role="tab"]');
   const count = await tabs.count();
   const clicked = [];
 
@@ -169,9 +372,10 @@ async function clickTabs(page, route) {
 
 async function clickAddButtons(page) {
   const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
+  const root = await getContentRoot(page);
   const clicked = [];
   for (const text of profile.clickTexts ?? scanConfig.clickTexts) {
-    const buttons = page.getByRole("button", { name: text });
+    const buttons = root.getByRole("button", { name: text });
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxAddClicksPerView); i += 1) {
       const button = buttons.nth(i);
@@ -187,6 +391,7 @@ async function clickAddButtons(page) {
 
 async function expandDisclosureButtons(page) {
   const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
+  const root = await getContentRoot(page);
   const clicked = [];
   const seen = new Set();
   const disclosureSelectors = [
@@ -196,7 +401,7 @@ async function expandDisclosureButtons(page) {
   ];
 
   for (const selector of disclosureSelectors) {
-    const nodes = page.locator(selector);
+    const nodes = root.locator(selector);
     const count = await nodes.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxExpandClicksPerView); i += 1) {
       const node = nodes.nth(i);
@@ -212,7 +417,7 @@ async function expandDisclosureButtons(page) {
   }
 
   for (const text of profile.expandTexts ?? scanConfig.expandTexts) {
-    const buttons = page.getByRole("button", { name: text });
+    const buttons = root.getByRole("button", { name: text });
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxExpandClicksPerView); i += 1) {
       const button = buttons.nth(i);
@@ -232,12 +437,13 @@ async function expandDisclosureButtons(page) {
 
 async function clickActionButtons(page) {
   const profile = routeProfile(page.url().replace(scanConfig.baseUrl, ""));
+  const root = await getContentRoot(page);
   const actionTexts = profile.actionTexts ?? [];
   const clicked = [];
   const seen = new Set();
 
   for (const text of actionTexts) {
-    const buttons = page.getByRole("button", { name: text });
+    const buttons = root.getByRole("button", { name: text });
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, scanConfig.maxActionClicksPerView); i += 1) {
       const button = buttons.nth(i);
@@ -307,11 +513,26 @@ async function runScan() {
 
   const browser = await launchBrowser(playwright);
   const context = await browser.newContext();
-  await context.addInitScript(() => {
+  const bootstrap = readScanBootstrap();
+  await context.addInitScript((bootstrapData) => {
     try {
       localStorage.setItem("openclaw.i18n.locale", "zh-CN");
+      const currentSettings = JSON.parse(localStorage.getItem("openclaw.control.settings.v1") || "{}");
+      localStorage.setItem(
+        "openclaw.control.settings.v1",
+        JSON.stringify({
+          ...currentSettings,
+          ...(bootstrapData.settings || {})
+        })
+      );
+      if (bootstrapData.deviceIdentity?.deviceId) {
+        localStorage.setItem("openclaw-device-identity-v1", JSON.stringify(bootstrapData.deviceIdentity));
+      }
+      if (bootstrapData.deviceAuth?.tokens) {
+        localStorage.setItem("openclaw.device.auth.v1", JSON.stringify(bootstrapData.deviceAuth));
+      }
     } catch {}
-  });
+  }, bootstrap);
   const page = await context.newPage();
   const startedAt = new Date().toISOString();
   const results = [];
@@ -352,4 +573,4 @@ function summarizeScan(scan) {
     .sort((a, b) => b.residualEntries - a.residualEntries);
 }
 
-export { runScan, summarizeScan };
+export { readScanBootstrap, runScan, summarizeScan };
