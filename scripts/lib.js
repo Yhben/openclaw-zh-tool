@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
 const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, "manifest.json"), "utf8"));
+const defaultRepoUrl = "https://github.com/Yhben/openclaw-zh-tool.git";
 
 function candidateOpenClawDirs() {
   const candidates = [];
@@ -129,6 +130,38 @@ function resolveContext() {
   };
 }
 
+function getDefaultRepoUrl() {
+  return process.env.OPENCLAW_ZH_REPO_URL || defaultRepoUrl;
+}
+
+function getAutohealBaseDir() {
+  return path.join(process.env.HOME ?? "", ".openclaw-zh-tool");
+}
+
+function getAutohealScriptPath() {
+  return path.join(getAutohealBaseDir(), "autoheal.sh");
+}
+
+function getAutohealLogDir() {
+  return path.join(getAutohealBaseDir(), "logs");
+}
+
+function getAutohealOutLogPath() {
+  return path.join(getAutohealLogDir(), "autoheal.out.log");
+}
+
+function getAutohealErrLogPath() {
+  return path.join(getAutohealLogDir(), "autoheal.err.log");
+}
+
+function getLaunchAgentLabel() {
+  return "com.yhben.openclaw-zh.autoheal";
+}
+
+function getLaunchAgentPath() {
+  return path.join(process.env.HOME ?? "", "Library/LaunchAgents", `${getLaunchAgentLabel()}.plist`);
+}
+
 function isVerifiedVersion(manifestValue, version) {
   return manifestValue.verifiedOpenClawVersions.includes(version);
 }
@@ -211,6 +244,8 @@ function collectHealth(ctx) {
   const backupDirExists = state?.backupDir ? fileExists(state.backupDir) : false;
   const targetFileExists = state?.targetFile ? fileExists(path.join(ctx.assetsDir, state.targetFile)) : true;
   const indexBundleExists = fileExists(ctx.indexBundlePath);
+  const targetFileMatchesCurrent = state?.targetFile ? state.targetFile === ctx.indexBundle : false;
+  const versionMatchesCurrent = state?.openClawVersion ? state.openClawVersion === ctx.openClawVersion : false;
 
   return {
     openClawDir: ctx.openClawDir,
@@ -223,8 +258,22 @@ function collectHealth(ctx) {
     runtimeMatches,
     backupDirExists,
     targetFileExists,
+    targetFileMatchesCurrent,
+    versionMatchesCurrent,
     state
   };
+}
+
+function describeHealingNeed(health) {
+  if (!health.statePresent) return "patch state missing";
+  if (!health.indexBundleExists) return "current bundle missing";
+  if (!health.markerInjected) return "runtime markers missing";
+  if (!health.runtimeMatches) return "runtime payload mismatch";
+  if (!health.targetFileExists) return "previous target bundle missing";
+  if (!health.targetFileMatchesCurrent) return "OpenClaw bundle changed after upgrade";
+  if (!health.versionMatchesCurrent) return "OpenClaw version changed after upgrade";
+  if (!health.backupDirExists) return "backup directory missing";
+  return null;
 }
 
 export {
@@ -232,9 +281,18 @@ export {
   bundleContainsExpectedRuntime,
   bundleContainsRuntime,
   collectHealth,
+  describeHealingNeed,
   ensureDir,
   findIndexBundle,
   fileExists,
+  getAutohealBaseDir,
+  getAutohealErrLogPath,
+  getAutohealLogDir,
+  getAutohealOutLogPath,
+  getAutohealScriptPath,
+  getDefaultRepoUrl,
+  getLaunchAgentLabel,
+  getLaunchAgentPath,
   readState,
   readRuntime,
   readText,

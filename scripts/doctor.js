@@ -1,4 +1,5 @@
 import { collectHealth, resolveContext } from "./lib.js";
+import { getAutohealStatus } from "./autoheal-lib.js";
 import { analyzeScan } from "./autofix-lib.js";
 import { runScan, summarizeScan } from "./scan.js";
 
@@ -26,6 +27,8 @@ function main() {
   line("Runtime markers", health.markerInjected ? "present" : "missing");
   line("Runtime payload match", health.runtimeMatches ? "yes" : "no");
   line("Backup dir", health.backupDirExists ? "present" : "missing");
+  const autoheal = getAutohealStatus();
+  line("Auto-heal", autoheal.enabled ? "enabled" : autoheal.supported ? "disabled" : "manual-only");
 
   if (!installed && problems.length === 0) {
     console.log("Doctor status: not installed");

@@ -8,6 +8,10 @@
   },
   "scripts": {
     "install:patch": "node ./scripts/install.js",
+    "heal": "node ./scripts/heal.js",
+    "watch": "node ./scripts/watch.js",
+    "enable-autoheal": "node ./scripts/enable-autoheal.js",
+    "disable-autoheal": "node ./scripts/disable-autoheal.js",
     "restore": "node ./scripts/restore.js",
     "status": "node ./scripts/status.js",
     "verify": "node ./scripts/verify.js",

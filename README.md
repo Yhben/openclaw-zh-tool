@@ -36,6 +36,7 @@ This project is designed for people who want:
 - a Chinese WebUI for OpenClaw
 - a reversible install
 - version-aware adaptive patching instead of hash-locked full asset replacement
+- automatic self-heal after OpenClaw upgrades on macOS
 - scan/report tools to find residual English UI text
 - conservative auto-fix helpers for future OpenClaw updates
 
@@ -111,6 +112,32 @@ It does not replace the whole `assets` directory.
 
 That is important because OpenClaw asset filenames often include hashes and change between releases. Runtime injection is more resilient than shipping a single hard-coded replacement bundle.
 
+## How upgrade breakage is handled now
+
+OpenClaw upgrades usually replace:
+
+- `dist/control-ui/assets/index-*.js`
+
+So if the old localization runtime was injected into the previous bundle, it disappears when the official upgrade swaps in a new hashed file.
+
+This project now handles that in two ways:
+
+- on macOS, `install` enables a background self-heal LaunchAgent by default
+- the self-heal service checks whether the OpenClaw version changed, the active bundle changed, the runtime markers disappeared, or the payload drifted
+- when drift is detected, it reapplies the latest runtime automatically
+
+If you want to repair manually instead of waiting for the background task:
+
+```bash
+node bin/openclaw-zh.js heal
+```
+
+Or just rerun install:
+
+```bash
+node bin/openclaw-zh.js install
+```
+
 ## Quick start
 
 ### Clone and install from source
@@ -169,6 +196,10 @@ After cloning, you can use:
 
 ```bash
 node bin/openclaw-zh.js install
+node bin/openclaw-zh.js heal
+node bin/openclaw-zh.js watch
+node bin/openclaw-zh.js enable-autoheal
+node bin/openclaw-zh.js disable-autoheal
 node bin/openclaw-zh.js status
 node bin/openclaw-zh.js verify
 node bin/openclaw-zh.js doctor
@@ -185,10 +216,30 @@ node bin/openclaw-zh.js restore
 `install`
 
 - injects the runtime into the active bundle
+- enables background self-heal by default on macOS
+
+`heal`
+
+- checks whether an OpenClaw upgrade or bundle change invalidated the patch
+- reapplies the runtime if needed
+
+`watch`
+
+- keeps polling OpenClaw in the foreground
+- auto-heals when bundle replacement or runtime loss is detected
+
+`enable-autoheal`
+
+- enables the macOS LaunchAgent background self-heal service
+
+`disable-autoheal`
+
+- disables the macOS LaunchAgent background self-heal service
 
 `status`
 
 - shows install state, detected version, and active bundle
+- shows self-heal status
 
 `verify`
 
@@ -228,6 +279,7 @@ node bin/openclaw-zh.js restore
 `restore`
 
 - restores the original bundle from backup
+- disables background self-heal by default so the patch is not immediately re-applied
 
 ## Browser scan behavior
 

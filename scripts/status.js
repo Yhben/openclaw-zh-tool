@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { getAutohealStatus } from "./autoheal-lib.js";
 import { readState, resolveContext } from "./lib.js";
 
 function main() {
@@ -10,6 +11,8 @@ function main() {
   console.log(`OpenClaw version: ${ctx.openClawVersion}`);
   console.log(`Verified version: ${verified ? "yes" : "no"}`);
   console.log(`Injection target: ${ctx.indexBundle}`);
+  const autoheal = getAutohealStatus();
+  console.log(`Auto-heal: ${autoheal.enabled ? "enabled" : autoheal.supported ? "disabled" : "manual-only"}`);
 
   if (!state) {
     console.log("Patch status: not installed");

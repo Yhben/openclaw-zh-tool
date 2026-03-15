@@ -37,6 +37,7 @@ iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -U
 
 - 自适应检测当前 OpenClaw 前端 bundle
 - 在 bundle 里注入显示层中文 runtime
+- 在 macOS 上默认启用升级自愈
 - 保留备份
 - 支持恢复
 - 支持扫描残留英文
@@ -107,6 +108,32 @@ iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -U
 - 不依赖固定 hash 文件名
 - 出问题可以恢复
 
+## 现在怎么解决升级后失效
+
+OpenClaw 官方升级时，通常会直接替换：
+
+- `dist/control-ui/assets/index-*.js`
+
+所以旧版汉化如果只是注入在当前 bundle 里，升级后自然会一起消失。
+
+这个项目现在的处理方式是：
+
+- `install` 之后，macOS 默认会启用后台自动自愈
+- 后台会周期性检查当前 OpenClaw 的版本、bundle 文件名和 runtime 状态
+- 一旦发现 OpenClaw 升级、bundle hash 改变、补丁丢失或 runtime 不匹配，就会自动重新安装最新汉化
+
+如果你不想等后台自愈，也可以手动执行：
+
+```bash
+node bin/openclaw-zh.js heal
+```
+
+或者直接重新安装：
+
+```bash
+node bin/openclaw-zh.js install
+```
+
 ## 快速开始
 
 ### 方式一：克隆仓库后安装
@@ -165,6 +192,10 @@ iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/restore.ps1 -U
 
 ```bash
 node bin/openclaw-zh.js install
+node bin/openclaw-zh.js heal
+node bin/openclaw-zh.js watch
+node bin/openclaw-zh.js enable-autoheal
+node bin/openclaw-zh.js disable-autoheal
 node bin/openclaw-zh.js status
 node bin/openclaw-zh.js verify
 node bin/openclaw-zh.js doctor
@@ -181,10 +212,30 @@ node bin/openclaw-zh.js restore
 `install`
 
 - 注入中文 runtime
+- macOS 默认启用后台自动自愈
+
+`heal`
+
+- 检测是否因升级或 bundle 变化而丢失汉化
+- 如有需要，自动重新安装当前 runtime
+
+`watch`
+
+- 前台轮询监控 OpenClaw 状态
+- 发现升级替换或补丁丢失时自动修复
+
+`enable-autoheal`
+
+- 在 macOS 上启用 LaunchAgent 后台自愈服务
+
+`disable-autoheal`
+
+- 在 macOS 上关闭 LaunchAgent 后台自愈服务
 
 `status`
 
 - 查看当前安装状态、检测到的版本和目标 bundle
+- 查看自动自愈状态
 
 `verify`
 
@@ -221,6 +272,7 @@ node bin/openclaw-zh.js restore
 `restore`
 
 - 恢复原始 bundle
+- 默认同时关闭后台自愈，避免恢复后又被自动重新打上补丁
 
 ## 浏览器扫描会做什么
 
