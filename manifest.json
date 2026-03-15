@@ -12,6 +12,7 @@
   "supplements": {
     "exactFiles": [
       "supplements/custom-exact.json",
+      "supplements/deep-exact.json",
       "supplements/generated-exact.json"
     ]
   }
