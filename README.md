@@ -1,5 +1,12 @@
 # openclaw-zh-tool
 
+## Contact
+
+- X / Twitter: [@0x0ben](https://x.com/0x0ben)
+- WeChat QR:
+
+![WeChat QR](./assets/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260315203546_39_2.jpg)
+
 `openclaw-zh-tool` is a community localization tool for the OpenClaw Control WebUI.
 
 - Chinese guide: [README.zh-CN.md](./README.zh-CN.md)

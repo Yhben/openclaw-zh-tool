@@ -1,5 +1,12 @@
 # openclaw-zh-tool
 
+## 联系方式
+
+- 推特 / X：[@0x0ben](https://x.com/0x0ben)
+- 微信二维码：
+
+![微信二维码](./assets/%E5%BE%AE%E4%BF%A1%E5%9B%BE%E7%89%87_20260315203546_39_2.jpg)
+
 `openclaw-zh-tool` 是一个面向 OpenClaw Control WebUI 的社区汉化工具。
 
 它的作用不是修改 OpenClaw 的运行逻辑，而是给已经安装好的 OpenClaw 前端界面注入一层中文显示运行时，让中文用户更容易使用 WebUI。
