@@ -8,6 +8,20 @@
 - Pre-release checklist: [docs/PRE_RELEASE_CHECKLIST.md](./docs/PRE_RELEASE_CHECKLIST.md)
 - Post-release guide: [docs/POST_RELEASE_GUIDE.md](./docs/POST_RELEASE_GUIDE.md)
 
+## One-line install
+
+macOS / Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.sh | bash
+```
+
+Windows PowerShell:
+
+```powershell
+iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -UseBasicParsing | iex
+```
+
 It injects a Chinese display-layer runtime into an installed OpenClaw frontend bundle so Chinese-speaking users can use the WebUI more easily without changing OpenClaw's runtime behavior.
 
 This project is designed for people who want:

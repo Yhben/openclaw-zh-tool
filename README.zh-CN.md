@@ -4,6 +4,20 @@
 
 它的作用不是修改 OpenClaw 的运行逻辑，而是给已经安装好的 OpenClaw 前端界面注入一层中文显示运行时，让中文用户更容易使用 WebUI。
 
+## 一句话安装
+
+### macOS / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.sh | bash
+```
+
+### Windows PowerShell
+
+```powershell
+iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -UseBasicParsing | iex
+```
+
 ## 这个项目是做什么的
 
 这个工具主要解决的问题是：
