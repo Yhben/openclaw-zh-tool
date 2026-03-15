@@ -30,5 +30,5 @@ The format is intentionally lightweight and focused on real user-facing changes.
 
 ### Notes
 
-- verified OpenClaw version remains `2026.3.12`
+- verified OpenClaw versions now include `2026.3.12` and `2026.3.13`
 - future OpenClaw UI changes may still require maintenance updates

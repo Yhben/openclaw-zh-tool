@@ -45,6 +45,7 @@ iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/restore.ps1 -U
 ## Verified OpenClaw version
 
 - `2026.3.12`
+- `2026.3.13`
 
 ## Important notes
 

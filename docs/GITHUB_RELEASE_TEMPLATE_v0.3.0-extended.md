@@ -62,6 +62,7 @@ If the UI still shows old English after patching:
 ## Verified OpenClaw version
 
 - `2026.3.12`
+- `2026.3.13`
 
 ## Important notes
 

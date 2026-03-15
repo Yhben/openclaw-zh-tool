@@ -66,7 +66,7 @@ iwr https://raw.githubusercontent.com/Yhben/openclaw-zh-tool/main/install.ps1 -U
 
 ## 当前状态
 
-- 已验证 OpenClaw 版本：`2026.3.12`
+- 已验证 OpenClaw 版本：`2026.3.12`、`2026.3.13`
 - 当前模式：自适应 runtime 注入
 - 当前补词结构：
   - 基础 runtime

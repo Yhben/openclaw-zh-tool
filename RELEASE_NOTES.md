@@ -32,6 +32,7 @@ node bin/openclaw-zh.js restore
 ### Verified OpenClaw version
 
 - `2026.3.12`
+- `2026.3.13`
 
 ### Compatibility notes
 

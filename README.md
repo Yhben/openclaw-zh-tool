@@ -76,7 +76,7 @@ If you install this tool correctly, OpenClaw should continue to behave the same 
 
 ## Project status
 
-- Verified OpenClaw version: `2026.3.12`
+- Verified OpenClaw versions: `2026.3.12`, `2026.3.13`
 - Patch mode: adaptive runtime injection
 - Current strategy: base runtime + generated supplements + custom supplements
 
