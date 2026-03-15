@@ -19,6 +19,7 @@ const scanConfig = {
     "/debug",
     "/logs"
   ],
+  scrollFractions: [0, 0.35, 0.7, 1],
   clickTexts: ["添加", "添加条目", "Add", "Add Entry"],
   expandTexts: ["展开", "高级", "更多", "显示更多", "Expand", "Advanced", "More", "Show more"],
   routeProfiles: {
@@ -46,13 +47,13 @@ const scanConfig = {
       actionTexts: ["编辑", "详情", "设置", "Edit", "Details", "Settings"]
     },
     "/infrastructure": {
-      tabTexts: ["网关", "浏览器", "日志", "监控", "媒体", "存储"],
+      tabTexts: ["基础设施", "网关", "Web", "浏览器", "NodeHost", "CanvasHost", "发现", "媒体"],
       clickTexts: ["添加", "添加条目", "Add", "Add Entry"],
       expandTexts: ["高级", "展开", "更多", "Expand", "Advanced"],
       actionTexts: ["编辑", "详情", "设置", "Edit", "Details", "Settings"]
     },
     "/ai-agents": {
-      tabTexts: ["会话", "线程", "模型", "记忆", "上下文", "提示"],
+      tabTexts: ["AI 与代理", "代理", "模型", "技能", "工具", "记忆", "会话"],
       clickTexts: ["添加", "添加条目", "Add", "Add Entry"],
       expandTexts: ["高级", "展开", "更多", "Expand", "Advanced"],
       actionTexts: ["编辑", "详情", "设置", "Edit", "Details", "Settings"]

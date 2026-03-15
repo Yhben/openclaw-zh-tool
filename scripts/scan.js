@@ -315,6 +315,36 @@ function normalizeEntries(entries) {
   return entries.filter((entry) => !shouldIgnore(entry.text));
 }
 
+async function scrollPage(page, fraction) {
+  await page.evaluate((targetFraction) => {
+    const scroller =
+      document.scrollingElement ||
+      document.documentElement ||
+      document.body;
+    const maxScroll = Math.max(0, scroller.scrollHeight - window.innerHeight);
+    const top = Math.round(maxScroll * targetFraction);
+    window.scrollTo({ top, behavior: "instant" });
+  }, fraction);
+  await page.waitForTimeout(scanConfig.settleMs);
+}
+
+async function snapshotAtScrollPoints(page, viewPrefix, views) {
+  for (const fraction of scanConfig.scrollFractions ?? [0]) {
+    await scrollPage(page, fraction);
+    const entries = normalizeEntries(await collectVisibleEnglish(page));
+    const suffix =
+      fraction === 0 ? "top" :
+      fraction === 1 ? "bottom" :
+      `${Math.round(fraction * 100)}`;
+    views.push({
+      view: `${viewPrefix}:${suffix}`,
+      entries
+    });
+  }
+
+  await scrollPage(page, 0);
+}
+
 async function getContentRoot(page) {
   const main = page.locator("main");
   const count = await main.count();
@@ -467,31 +497,26 @@ async function scanRoute(page, route) {
   await page.waitForTimeout(scanConfig.settleMs);
 
   const views = [];
-  const snapshot = async (view) => {
-    const entries = normalizeEntries(await collectVisibleEnglish(page));
-    views.push({ view, entries });
-  };
-
-  await snapshot("default");
+  await snapshotAtScrollPoints(page, "default", views);
 
   const tabs = await clickTabs(page, route);
   for (const tab of tabs) {
-    await snapshot(`tab:${tab}`);
+    await snapshotAtScrollPoints(page, `tab:${tab}`, views);
   }
 
   const expanded = await expandDisclosureButtons(page);
   if (expanded.length > 0) {
-    await snapshot("expanded");
+    await snapshotAtScrollPoints(page, "expanded", views);
   }
 
   const addClicks = await clickAddButtons(page);
   if (addClicks.length > 0) {
-    await snapshot("after-add");
+    await snapshotAtScrollPoints(page, "after-add", views);
   }
 
   const actionClicks = await clickActionButtons(page);
   if (actionClicks.length > 0) {
-    await snapshot("after-action");
+    await snapshotAtScrollPoints(page, "after-action", views);
   }
 
   return {
